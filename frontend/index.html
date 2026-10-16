@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#173f39">
+  <title>Smart Travel Planner Using AI &amp; ML</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/app.js" defer></script>
+</head>
+
+<body>
+  <header class="navbar">
+    <a href="#" class="brand">
+      <span class="brand-icon">✈</span>
+      <span class="brand-text">
+        <strong>SMART TRAVEL</strong>
+        <small>PLANNER USING AI &amp; ML</small>
+      </span>
+    </a>
+
+    <nav class="nav-links">
+      <a href="#home">Home</a>
+      <a href="#planner">Plan a Trip</a>
+      <a href="#about">About Project</a>
+    </nav>
+
+    <a href="#planner" class="nav-button">Start Planning ↗</a>
+  </header>
+
+  <main>
+    <section class="hero" id="home">
+      <div class="hero-content">
+        <div class="eyebrow"><span class="live-dot"></span> AI-POWERED TRAVEL ASSISTANT</div>
+
+        <h1>Your next journey,<br>planned <span>smarter.</span></h1>
+
+        <p>
+          Discover places, organise your days and plan your budget.
+          Let AI and Machine Learning help you make your next trip easier.
+        </p>
+
+        <div class="hero-actions">
+          <a class="primary-link" href="#planner">Plan my journey <span>↗</span></a>
+          <a class="secondary-link" href="#about">Explore the project ↓</a>
+        </div>
+
+        <div class="hero-points">
+          <span>✓ Personalised plans</span>
+          <span>✓ Budget estimates</span>
+          <span>✓ Day-wise itinerary</span>
+        </div>
+      </div>
+
+      <div class="hero-art" aria-label="Travel illustration">
+        <div class="art-orbit orbit-one"></div>
+        <div class="art-orbit orbit-two"></div>
+        <div class="art-sun"></div>
+
+        <div class="travel-card">
+          <div class="travel-card-top">
+            <span>YOUR NEXT ADVENTURE</span>
+            <span class="art-star">✦</span>
+          </div>
+
+          <div class="landscape">
+            <div class="mountain mountain-back"></div>
+            <div class="mountain mountain-front"></div>
+            <div class="landscape-sun"></div>
+            <div class="landscape-path"></div>
+          </div>
+
+          <div class="travel-card-bottom">
+            <div>
+              <small>MADE FOR YOU</small>
+              <strong>Explore something new.</strong>
+            </div>
+            <div class="compass">✧</div>
+          </div>
+        </div>
+
+        <div class="floating-note note-top">
+          <span class="float-icon">✦</span>
+          <span><strong>AI + ML</strong><small>Smart suggestions</small></span>
+        </div>
+
+        <div class="floating-note note-bottom">
+          <span class="float-icon budget-icon">₹</span>
+          <span><strong>Budget friendly</strong><small>Plan within your limit</small></span>
+        </div>
+      </div>
+
+      <div class="hero-decoration">TRAVEL · DISCOVER · REPEAT</div>
+    </section>
+
+    <section class="planner-section" id="planner">
+      <div class="section-intro">
+        <div class="eyebrow dark-eyebrow">LET'S PLAN SOMETHING GOOD</div>
+        <h2>Build your <span>travel plan.</span></h2>
+        <p>Tell us a little about your trip. We'll help organise the details.</p>
+      </div>
+
+      <div class="planner-layout">
+        <aside class="form-panel">
+          <div class="form-heading">
+            <div class="form-icon">⌁</div>
+            <div>
+              <h3>Your trip details</h3>
+              <p>Fill in your travel preferences</p>
+            </div>
+          </div>
+
+          <form id="trip-form">
+            <div class="field">
+              <label for="destination">Where do you want to go?</label>
+              <input type="text" id="destination" name="destination" placeholder="e.g. Goa, Manali, Paris" required>
+              <small>Enter an Indian or international destination.</small>
+            </div>
+
+            <div class="form-row">
+              <div class="field">
+                <label for="days">Number of days</label>
+                <input type="number" id="days" name="days" min="1" max="30" value="3" required>
+              </div>
+
+              <div class="field">
+                <label for="budget">Total budget (₹)</label>
+                <input type="number" id="budget" name="budget" min="1" placeholder="15000" value="15000" required>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="companions">Who is travelling?</label>
+              <select id="companions" name="companions">
+                <option value="Any">Not specified</option>
+                <option value="Solo">Solo</option>
+                <option value="Couple">Couple</option>
+                <option value="Family">Family</option>
+                <option value="Friends">Friends</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="theme">What interests you most?</label>
+              <select id="theme" name="theme">
+                <option value="Any">A little bit of everything</option>
+                <option value="Adventure">Adventure &amp; outdoors</option>
+                <option value="Nature">Nature &amp; mountains</option>
+                <option value="Culture">Culture &amp; heritage</option>
+                <option value="Food">Food &amp; local markets</option>
+                <option value="Beach">Beaches &amp; relaxation</option>
+                <option value="Shopping">Shopping &amp; city life</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="pace">Preferred travel pace</label>
+              <select id="pace" name="pace">
+                <option value="Any">Balanced</option>
+                <option value="Relaxed">Relaxed — take it slow</option>
+                <option value="Balanced">Balanced — a bit of everything</option>
+                <option value="Fast">Packed — see more places</option>
+              </select>
+            </div>
+
+            <button type="submit" id="submit-button" class="generate-button">
+              <span>Generate my itinerary</span>
+              <span class="button-arrow">↗</span>
+            </button>
+
+            <p class="form-disclaimer">
+              <span>ⓘ</span> Costs are estimates, not live prices. Check
+              opening hours and travel arrangements before your trip.
+            </p>
+          </form>
+        </aside>
+
+        <section class="results-area" aria-live="polite">
+          <div class="results-top">
+            <div>
+              <div class="eyebrow dark-eyebrow">YOUR PERSONAL TRAVEL PLAN</div>
+              <h2>Trip <span>itinerary.</span></h2>
+              <p class="results-subtitle">Your trip details and daily schedule will appear here.</p>
+            </div>
+            <div class="status" id="status">Ready to plan</div>
+          </div>
+
+          <div class="results" id="results">
+            <div class="empty-state">
+              <div class="empty-illustration">
+                <span class="empty-plane">✈</span>
+                <span class="empty-spark spark-one">✦</span>
+                <span class="empty-spark spark-two">✧</span>
+              </div>
+              <h3>Your next adventure starts here.</h3>
+              <p>
+                Enter your destination, trip duration and budget.
+                Your itinerary will show up here once it's generated.
+              </p>
+              <a href="#planner" class="empty-link">Enter trip details ↑</a>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="about-section" id="about">
+      <div class="about-copy">
+        <div class="eyebrow dark-eyebrow">A STUDENT PROJECT WITH A PURPOSE</div>
+        <h2>Travel planning,<br><span>with a little intelligence.</span></h2>
+        <p>
+          Smart Travel Planner Using AI &amp; ML is designed to make trip
+          planning simpler. It combines destination-based recommendations
+          with AI-generated itinerary suggestions and estimated costs.
+        </p>
+      </div>
+
+      <div class="technology-panel">
+        <h3>Technology behind the project</h3>
+        <p>Tools and technologies used to build this application.</p>
+        <div class="tech-list">
+          <span>HTML</span>
+          <span>CSS</span>
+          <span>JavaScript</span>
+          <span>Python</span>
+          <span>Flask</span>
+          <span>Machine Learning</span>
+          <span>Generative AI</span>
+        </div>
+        <div class="tech-footer">
+          <span class="tech-dot"></span>
+          Learning by building, one trip at a time.
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <a href="#home" class="footer-brand">SMART TRAVEL PLANNER <span>USING AI &amp; ML</span></a>
+    <p>Academic project · Designed to make travel planning simpler.</p>
+    <a href="#home" class="back-top">Back to top ↑</a>
+  </footer>
+</body>
+
+</html>

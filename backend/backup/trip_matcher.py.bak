@@ -1,0 +1,130 @@
+
+import pandas as pd
+from sentence_transformers import SentenceTransformer, util
+
+
+class TripMatcher:
+    def __init__(self, dataframe):
+        self.df = dataframe.copy()
+
+        self.model = SentenceTransformer(
+            "sentence-transformers/all-MiniLM-L6-v2"
+        )
+
+        self.df = self.df.fillna("")
+
+        self.text_column = (
+            "embedding_text"
+            if "embedding_text" in self.df.columns
+            else "trip_plan"
+        )
+
+        self.df["destination"] = (
+            self.df["destination"].astype(str).str.strip()
+        )
+
+        self.df["_search_text"] = self.df.apply(
+            self.make_search_text, axis=1
+        )
+
+        self.embeddings = self.model.encode(
+            self.df["_search_text"].tolist(),
+            convert_to_tensor=True,
+            show_progress_bar=True
+        )
+
+        print("Semantic travel model loaded successfully.")
+
+    def make_search_text(self, row):
+        fields = [
+            self.text_column,
+            "destination",
+            "duration_days",
+            "companions",
+            "primary_theme",
+            "pace",
+            "daily_plan",
+            "trip_plan"
+        ]
+
+        parts = []
+
+        for field in fields:
+            if field in row.index and str(row[field]).strip():
+                parts.append(f"{field}: {row[field]}")
+
+        return " ".join(parts)
+
+    def recommend(
+        self, destination, days, budget,
+        companions, theme, pace, top_k=5
+    ):
+        destination = destination.strip()
+
+        if not destination:
+            return [], "Please enter a destination."
+
+        # First, find exact destination matches.
+        mask = (
+            self.df["destination"].str.casefold()
+            == destination.casefold()
+        )
+
+        candidates = self.df[mask].copy()
+
+        # Try partial destination matching if no exact match exists.
+        if candidates.empty:
+            mask = self.df["destination"].str.contains(
+                destination, case=False, regex=False, na=False
+            )
+            candidates = self.df[mask].copy()
+
+        if candidates.empty:
+            return [], (
+                "No matching destination in the dataset. "
+                "Use the AI itinerary fallback."
+            )
+
+        query = (
+            f"Travel to {destination}. "
+            f"Trip duration: {days} days. "
+            f"Budget: {budget}. "
+            f"Travelling with: {companions}. "
+            f"Interests: {theme}. "
+            f"Preferred pace: {pace}."
+        )
+
+        query_embedding = self.model.encode(
+            query, convert_to_tensor=True
+        )
+
+        candidate_indices = candidates.index.tolist()
+
+        scores = util.cos_sim(
+            query_embedding,
+            self.embeddings[candidate_indices]
+        )[0].cpu().tolist()
+
+        candidates["similarity_score"] = scores
+
+        # Prefer exact duration when the dataset has matching rows.
+        if "duration_days" in candidates.columns:
+            durations = pd.to_numeric(
+                candidates["duration_days"], errors="coerce"
+            )
+            exact_days = candidates[durations == int(days)]
+
+            if not exact_days.empty:
+                candidates = exact_days
+
+        results = candidates.sort_values(
+            "similarity_score", ascending=False
+        ).head(top_k)
+
+        recommendations = results.drop(
+            columns=["_search_text"], errors="ignore"
+        ).to_dict(orient="records")
+
+        return recommendations, (
+            "Recommendations ranked using semantic similarity."
+        )

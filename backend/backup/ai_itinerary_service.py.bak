@@ -1,0 +1,160 @@
+
+import json
+import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+from groq import Groq
+
+
+BACKEND_DIR = Path(__file__).resolve().parents[1]
+load_dotenv(BACKEND_DIR / ".env")
+
+MODEL_NAME = os.getenv(
+    "GROQ_MODEL",
+    "openai/gpt-oss-120b"
+)
+
+
+def generate_ai_itinerary(
+    destination,
+    days,
+    budget,
+    companions="Any",
+    theme="Any",
+    pace="Any"
+):
+    api_key = os.getenv("GROQ_API_KEY")
+
+    if not api_key:
+        raise RuntimeError(
+            "GROQ_API_KEY is missing from backend/.env"
+        )
+
+    client = Groq(api_key=api_key)
+
+    prompt = f"""
+Create a useful travel itinerary for the requested destination.
+
+USER INPUT:
+Destination: {destination}
+Duration: {days} days
+Total budget: INR {budget}
+Travelling with: {companions}
+Main interest: {theme}
+Travel pace: {pace}
+
+RULES:
+- Keep the destination exactly as requested. Never substitute another city.
+- Use real, well-known attractions believed to exist in that destination.
+- Do not invent attraction names, ticket prices, opening hours or travel times.
+- If unsure about a price, give a rough estimate and mark it as unverified.
+- Spread activities across morning, afternoon and evening.
+- Avoid repeating the same attraction on different days.
+- Provide practical travel time between activities where possible.
+- Keep estimated trip expenses within the user's budget where reasonably possible.
+- State clearly that all prices and schedules need verification.
+- Treat costs as approximate INR estimates.
+- Include food, local transport and attraction fees in the estimate.
+- Do not claim that live prices, opening hours or availability were checked.
+- Do not include international airfare unless explicitly requested.
+- If the requested budget is unrealistic, explain this honestly.
+- Return valid JSON only, no Markdown or extra text.
+
+Return this JSON structure:
+{{
+  "destination": "{destination}",
+  "duration_days": {days},
+  "budget_amount": {budget},
+  "companions": "{companions}",
+  "pace": "{pace}",
+  "theme": "{theme}",
+  "source": "AI-generated",
+  "notice": "AI-generated plan; verify prices, opening hours and availability.",
+  "budget_breakdown": {{
+    "accommodation": 0,
+    "food": 0,
+    "local_transport": 0,
+    "attraction_fees": 0,
+    "miscellaneous": 0,
+    "estimated_total": 0
+  }},
+  "daily_plan": [
+    {{
+      "day": 1,
+      "title": "Day theme",
+      "stops": [
+        {{
+          "time": "09:00 AM",
+          "period": "Morning",
+          "place": "Real attraction name",
+          "activity": "What to do here",
+          "estimated_cost": 0,
+          "travel_duration": "Approximate travel time or unknown"
+        }}
+      ],
+      "estimated_day_cost": 0
+    }}
+  ],
+  "trip_plan": "Short practical overview",
+  "match_score": null
+}}
+
+Create exactly {days} daily_plan entries.
+Each day should ideally have morning, afternoon and evening activities.
+Use numeric values for costs. If an exact price is unknown, estimate cautiously
+and make the unverified nature clear in the notice.
+"""
+
+    response = client.chat.completions.create(
+        model=MODEL_NAME,
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "You are a careful travel-planning assistant. "
+                    "Never claim to have verified live travel information. "
+                    "Return valid JSON only."
+                )
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        temperature=0.3,
+        response_format={"type": "json_object"},
+        max_completion_tokens=6000
+    )
+
+    content = response.choices[0].message.content
+
+    try:
+        itinerary = json.loads(content)
+    except (TypeError, json.JSONDecodeError) as exc:
+        raise RuntimeError(
+            "Groq returned an invalid JSON itinerary."
+        ) from exc
+
+    daily_plan = itinerary.get("daily_plan")
+
+    if not isinstance(daily_plan, list) or not daily_plan:
+        raise RuntimeError(
+            "AI did not return a valid daily itinerary."
+        )
+
+    itinerary["destination"] = destination
+    itinerary["duration_days"] = days
+    itinerary["budget_amount"] = float(budget)
+    itinerary["companions"] = companions
+    itinerary["theme"] = theme
+    itinerary["pace"] = pace
+    itinerary["source"] = "AI-generated"
+    itinerary["match_score"] = None
+
+    itinerary.setdefault(
+        "notice",
+        "AI-generated plan; verify prices, opening hours and availability."
+    )
+
+    return itinerary

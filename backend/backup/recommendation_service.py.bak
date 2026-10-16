@@ -1,0 +1,116 @@
+
+from datasets import load_dataset
+from ml.trip_matcher import TripMatcher
+
+DATASET_ID = "avihayamor/tripmatch-ai-dataset"
+DATASET_CONFIG = "trip_plans"
+
+_matcher = None
+
+
+def get_matcher():
+    global _matcher
+
+    if _matcher is None:
+        print("\nLoading travel dataset from Hugging Face...")
+
+        dataset = load_dataset(
+            DATASET_ID,
+            DATASET_CONFIG,
+            split="train"
+        )
+
+        frame = dataset.to_pandas()
+
+        print("Dataset loaded successfully.")
+        print("Total rows:", len(frame))
+        print("Columns:", frame.columns.tolist())
+
+        if frame.empty:
+            raise ValueError("Dataset is empty.")
+
+        if "destination" not in frame.columns:
+            raise ValueError(
+                "Dataset is missing the destination column."
+            )
+
+        print("\nSample destinations:")
+        print(
+            frame["destination"]
+            .dropna()
+            .astype(str)
+            .drop_duplicates()
+            .head(20)
+            .tolist()
+        )
+
+        paris_rows = frame[
+            frame["destination"]
+            .astype(str)
+            .str.contains(
+                "paris",
+                case=False,
+                na=False,
+                regex=False
+            )
+        ]
+
+        print("Paris records found:", len(paris_rows))
+
+        if not paris_rows.empty:
+            print(
+                paris_rows[
+                    [
+                        col for col in [
+                            "destination",
+                            "duration_days",
+                            "daily_plan",
+                            "trip_plan"
+                        ]
+                        if col in frame.columns
+                    ]
+                ].head(3).to_string(index=False)
+            )
+
+        _matcher = TripMatcher(frame)
+
+        print("Travel recommendation model initialized.")
+
+    return _matcher
+
+
+def recommend_trips(
+    destination,
+    days,
+    budget,
+    companions,
+    theme,
+    pace
+):
+    try:
+        matcher = get_matcher()
+
+        recommendations, notice = matcher.recommend(
+            destination=destination,
+            days=days,
+            budget=budget,
+            companions=companions,
+            theme=theme,
+            pace=pace,
+            top_k=5
+        )
+
+        print(
+            f"Dataset recommendations for {destination}: "
+            f"{len(recommendations)}"
+        )
+
+        return {
+            "recommendations": recommendations,
+            "notice": notice,
+            "source": "dataset" if recommendations else "none"
+        }
+
+    except Exception as error:
+        print("DATASET RECOMMENDATION ERROR:", repr(error))
+        raise

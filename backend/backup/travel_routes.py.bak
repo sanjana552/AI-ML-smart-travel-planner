@@ -1,0 +1,130 @@
+
+from flask import Blueprint, jsonify, request
+from services.recommendation_service import recommend_trips
+from services.ai_itinerary_service import generate_ai_itinerary
+
+travel_bp = Blueprint("travel", __name__)
+
+
+def get_valid_dataset_plan(result, destination, days):
+    recommendations = result.get("recommendations", [])
+
+    for plan in recommendations:
+        plan_destination = str(plan.get("destination", "")).strip()
+        plan_days = plan.get("duration_days", plan.get("days"))
+
+        try:
+            plan_days = int(plan_days)
+        except (TypeError, ValueError):
+            continue
+
+        if destination.casefold() not in plan_destination.casefold():
+            continue
+
+        if plan_days != days:
+            continue
+
+        daily_plan = plan.get("daily_plan")
+
+        # Use a dataset plan only if it has structured daily activities.
+        if not isinstance(daily_plan, list) or not daily_plan:
+            continue
+
+        if not all(
+            isinstance(day, dict)
+            and isinstance(day.get("stops"), list)
+            and len(day["stops"]) > 0
+            for day in daily_plan
+        ):
+            continue
+
+        return plan
+
+    return None
+
+
+@travel_bp.post("/itinerary")
+def itinerary():
+    payload = request.get_json(silent=True) or {}
+
+    destination = str(payload.get("destination", "")).strip()
+    companions = str(payload.get("companions", "Any")).strip()
+    theme = str(payload.get("theme", "Any")).strip()
+    pace = str(payload.get("pace", "Any")).strip()
+
+    if not destination:
+        return jsonify({"error": "Please enter a destination."}), 400
+
+    try:
+        days = int(payload.get("days", 0))
+        budget = float(payload.get("budget", 0))
+    except (TypeError, ValueError):
+        return jsonify({
+            "error": "Days must be a whole number and budget must be numeric."
+        }), 400
+
+    if days < 1 or days > 30:
+        return jsonify({
+            "error": "Trip duration must be between 1 and 30 days."
+        }), 400
+
+    if budget <= 0:
+        return jsonify({
+            "error": "Budget must be greater than zero."
+        }), 400
+
+    try:
+        result = recommend_trips(
+            destination=destination,
+            days=days,
+            budget=budget,
+            companions=companions,
+            theme=theme,
+            pace=pace
+        )
+
+        valid_plan = get_valid_dataset_plan(result, destination, days)
+
+        if valid_plan:
+            valid_plan["source"] = "ML-dataset"
+            return jsonify({
+                "recommendations": [valid_plan],
+                "notice": result.get("notice", ""),
+                "source": "ML-dataset"
+            })
+
+        print(
+            f"No suitable structured dataset itinerary for "
+            f"{destination}, {days} days. Trying AI."
+        )
+
+    except Exception as exc:
+        print("DATASET ERROR:", repr(exc))
+        print("Trying AI itinerary generation.")
+
+    try:
+        ai_plan = generate_ai_itinerary(
+            destination=destination,
+            days=days,
+            budget=budget,
+            companions=companions,
+            theme=theme,
+            pace=pace
+        )
+
+        return jsonify({
+            "recommendations": [ai_plan],
+            "notice": ai_plan.get(
+                "notice",
+                "AI-generated itinerary. Verify prices and opening hours."
+            ),
+            "source": "AI-generated"
+        })
+
+    except Exception as exc:
+        print("AI ITINERARY ERROR:", repr(exc))
+
+        return jsonify({
+            "error": "Could not generate the itinerary.",
+            "details": str(exc)
+        }), 502
